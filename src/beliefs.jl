@@ -84,32 +84,33 @@ function resample(up::MEBeliefUpdater, particles::Vector, wp::Vector{Float64},
     particles = MEState[]
     x = nothing
     ore_quals = deepcopy(rock_obs.ore_quals)
+    mainbody_maps = Array{Float64, 3}[]
+    residuals = Vector{Float64}[]
     for s in sampled_particles
         mainbody_param = s.mainbody_params
         mainbody_map = s.mainbody_map
-        ore_map = s.ore_map
         if mainbody_param ∈ mainbody_params
             mainbody_map, mainbody_param = perturb_sample(up.m.mainbody_gen, mainbody_param, up.noise)
             max_lode = maximum(mainbody_map)
             mainbody_map ./= max_lode
             mainbody_map .*= up.m.mainbody_weight
             mainbody_map = reshape(mainbody_map, up.m.grid_dim)
-            # clamp!(ore_map, 0.0, 1.0)
         end
         n_ore_quals = Float64[]
         for (i, ore_qual) in enumerate(ore_quals)
             prior_ore = mainbody_map[rock_obs.coordinates[1, i], rock_obs.coordinates[2, i], 1]
-            n_ore_qual = (ore_qual - prior_ore)
-            push!(n_ore_quals, n_ore_qual)
+            push!(n_ore_quals, ore_qual - prior_ore)
         end
-        geostats.data.ore_quals = n_ore_quals
-        # gslib_dist.data.ore_quals = n_ore_quals
-        gp_ore_map = Base.rand(up.rng, geostats)
-        ore_map = gp_ore_map .+ mainbody_map
-        rock_obs_p = RockObservations(rock_obs.ore_quals, rock_obs.coordinates)
-        sp = MEState(ore_map, mainbody_param, mainbody_map, rock_obs_p,
-                    o.stopped, o.decided)
         push!(mainbody_params, mainbody_param)
+        push!(mainbody_maps, mainbody_map)
+        push!(residuals, n_ore_quals)
+    end
+    # all particles share the GP factorization, so draw their background fields in one batch
+    gp_ore_maps = rand_conditional(up.rng, geostats, residuals)
+    for (mainbody_param, mainbody_map, gp_ore_map) in zip(mainbody_params, mainbody_maps, gp_ore_maps)
+        rock_obs_p = RockObservations(rock_obs.ore_quals, rock_obs.coordinates)
+        sp = MEState(gp_ore_map .+ mainbody_map, mainbody_param, mainbody_map, rock_obs_p,
+                    o.stopped, o.decided)
         push!(particles, sp)
     end
     return particles

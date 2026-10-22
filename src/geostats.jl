@@ -182,6 +182,23 @@ end
 
 Base.rand(d::GeoStatsDistribution, n::Int64=1) = Base.rand(Random.GLOBAL_RNG, d, n)
 
+"""
+    rand_conditional(rng, d, residuals)
+One conditional realization per residual vector (values at `d.data.coordinates`).
+Same draw as `rand`, but the kriging means and the `L₂₂ * W` product are computed
+once for the whole batch instead of once per realization.
+"""
+function rand_conditional(rng::AbstractRNG, d::GeoStatsDistribution, residuals::Vector{Vector{Float64}})
+    pdata = georef(DataFrame(ore=residuals[1]), PointSet(d.data.coordinates))
+    vmapping = map(pdata, d.domain, (:ore,), d.lu_params.lugs.vparams[:ore].mapping)[:ore]
+    order = [dloc for (loc, dloc) in vmapping]  # data order used by calc_covs
+    Z₁ = reduce(hcat, residuals)[order, :] .- d.mean
+    P = d.lu_params
+    Y = P.A₂₁*(P.L₁₁ \ Z₁) .+ P.L₂₂*randn(rng, size(P.L₂₂, 2), length(residuals))
+    n = prod(d.grid_dims)
+    return [reshape(Y[1:n, i] .+ d.mean, d.grid_dims) for i in eachindex(residuals)]
+end
+
 # function solve_gp(d::GeoStatsDistribution)
 #     table = DataFrame(porosity=d.data.ore_quals)
 #     domain = PointSet(d.data.coordinates)

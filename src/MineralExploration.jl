@@ -74,4 +74,8 @@ export
         gen_cases
 include("utils.jl")
 
+export
+        run_batch_trial
+include("batch.jl")
+
 end

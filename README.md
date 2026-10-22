@@ -1,3 +1,22 @@
+# Batched assay feedback (fork addition)
+
+This fork adds one experiment: the planner commits to `B` holes before their assays return, instead of seeing each result before siting the next hole. Write-up, "Waiting for the Assay Lab": [sethlupo.com/waiting-for-the-assay-lab](https://sethlupo.com/waiting-for-the-assay-lab/) (source `docs/batch/index.html`, raw results `docs/batch/*.csv`).
+
+- `src/batch.jl`: `run_batch_trial`, the batched simulation loop (kriging-believer fill-in for pending holes)
+- `scripts/run_batch_test.jl`: one policy / batch size on a range of the 100 shared cases
+- `scripts/run_batch_all.sh`: the full sweep (B = 1, 2, 4, 8, plus 9- and 16-hole grids)
+- `scripts/plot_batch.py`: figures and summary table (`docs/batch/`)
+
+Reproduce with Julia 1.6 (`juliaup add 1.6`; `Manifest.toml` pins the 2022-era packages):
+
+```
+julia +1.6 --project=. -e 'using Pkg; Pkg.instantiate()'
+./scripts/run_batch_all.sh
+python3 scripts/plot_batch.py
+```
+
+The sweep takes about 5 hours on a 10-core laptop (4 POMCPOW workers at ~3 GB each; set `JOBS` to change).
+
 # MineralExploration
 This is the code for the intelligent prospector mineral exploration work conducted at Stanford University in a collaboration with SISL and SCERF. The source code provides a simulated mineral exploration problem and an implementation of the proposed sequential solution framework. The scripts needed to run the published experiments and additional trials are included in the `scripts` directory. All experiments were run in Julia 1.6.x. The specific versions of the required support packages are listed in the `project.toml`. 
 

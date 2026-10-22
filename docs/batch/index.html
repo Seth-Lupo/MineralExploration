@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Waiting for the Assay Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* After manyhands.cc: paper, graphite and steel; Barlow for text, Plex Mono for metadata. */
+:root {
+  --paper: #F1F0EC;
+  --graphite: #1C1E20;
+  --steel: #5C6670;
+  --rule: #D6D4CD;
+  --sans: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--graphite);
+  font: 18px/1.7 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px), 6vw);
+  padding-right: max(16px, env(safe-area-inset-right, 0px), 6vw);
+  padding-block: 72px 96px;
+}
+main { max-width: 36rem; margin: 0 auto; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.4rem); font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 0.9rem; text-wrap: balance; }
+h2 { font-size: 1.35rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; margin: 3rem 0 0.6rem; }
+h3 { font-size: 1.05rem; font-weight: 500; margin: 2rem 0 0.4rem; }
+ol.steps { padding-left: 1.3rem; }
+ol.steps li { margin-bottom: 0.6rem; }
+p { margin: 0 0 1rem; }
+a { color: var(--graphite); text-decoration: none; border-bottom: 1px solid var(--steel); }
+a:hover, a:focus-visible { border-bottom-color: var(--graphite); outline: none; }
+.byline { list-style: none; padding: 0; margin: 0 0 2.2rem; font-family: var(--mono); font-size: 0.8rem; line-height: 1.8; color: var(--steel); }
+.byline a { color: var(--steel); border-bottom-color: transparent; }
+.byline a:hover { color: var(--graphite); border-bottom-color: currentColor; }
+.byline a.code { color: var(--graphite); border-bottom: 1px solid var(--graphite); }
+.tldr { background: #E7E5DE; padding: 1.1rem 1.3rem 0.9rem; margin: 0 0 2.6rem; }
+.tldr h2 { font-family: var(--mono); font-size: 0.75rem; font-weight: 400; text-transform: uppercase; letter-spacing: 0.08em; color: var(--steel); margin: 0 0 0.5rem; }
+.tldr ul { margin: 0; padding-left: 1.1rem; }
+.tldr li { margin-bottom: 0.45rem; }
+mark { background: linear-gradient(transparent 58%, #DCD8CB 58%); color: inherit; padding: 0 0.05em; }
+strong { font-weight: 500; }
+figure { margin: 1.8rem 0; }
+figure img { display: block; width: 100%; max-width: 100%; }
+figcaption { font-family: var(--mono); font-size: 0.75rem; color: var(--steel); margin-top: 0.6rem; }
+.table-wrap { overflow-x: auto; margin: 1.2rem 0; }
+table { border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; width: 100%; }
+th, td { padding: 0.4rem 0.6rem; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-family: var(--mono); font-size: 0.72rem; font-weight: 400; text-transform: uppercase; letter-spacing: 0.06em; color: var(--steel); border-bottom-color: var(--graphite); }
+small { color: var(--steel); font-size: 0.82em; }
+.note { font-size: 0.85rem; color: var(--steel); }
+ul { padding-left: 1.2rem; }
+li { margin-bottom: 0.4rem; }
+ol.refs { font-size: 0.85rem; padding-left: 1.3rem; color: var(--steel); }
+ol.refs li { margin-bottom: 0.4rem; }
+ol.refs i { color: var(--graphite); font-style: normal; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Waiting for the Assay Lab</h1>
+<ul class="byline">
+<li>Seth Lupo</li>
+<li>October 2026</li>
+<li>Builds on Mern &amp; Caers (2023)</li>
+<li><a class="code" href="https://github.com/Seth-Lupo/MineralExploration">Code and data on GitHub →</a></li>
+</ul>
+
+<section class="tldr">
+<h2>TL;DR</h2>
+<ul>
+<li>Mineral exploration is a reinforcement learning loop. You drill a hole, a lab measures the rock, you update your picture of what's underground, and you drill again.</li>
+<li>Lab results take weeks, so real programs drill several holes before hearing back. I tested how much that hurts an AI drilling planner.</li>
+<li><strong>Drilling 8 holes per lab round made the same mine-or-walk-away decisions as drilling 1 at a time. It needed 4× fewer lab rounds and about 2 more holes.</strong></li>
+<li>Most of the value of adapting comes in the first round or two. Faster labs mainly save time.</li>
+</ul>
+</section>
+
+<p>This project began with one realization: mining exploration is classical RL.</p>
+
+<p>I had been reading about where mining is headed. What stood out was that <mark>the bottleneck is finding new deposits</mark>, not running the mines we already have.</p>
+
+<p>The IEA expects copper supply to fall about <a href="https://www.argusmedia.com/en/news-and-insights/latest-market-news/2690734-iea-warns-of-lithium-and-copper-deficits-by-2035">30% short of demand by 2035</a>, partly because too few deposits are being found. A new discovery takes about <a href="https://www.spglobal.com/market-intelligence/en/news-insights/resources/world-exploration-trends-2026">16 years</a> to become a working mine. So <mark>the mines we'll need in 2040 have to be found in the next few years</mark>. Yet exploration budgets have fallen three years in a row.</p>
+
+<p>So getting better at exploration matters. And most of exploration is making expensive decisions with very little information.</p>
+
+<p>At the same time I was taking a reinforcement learning (RL) class. The first thing you learn is the basic loop. An agent takes an action. The environment responds with an observation. The agent updates what it believes, and acts again.</p>
+
+<p>Partway through the course I realized this is exactly what exploration looks like. You drill a hole. A lab measures how much metal is in the rock, which is called an assay. You update your picture of what's underground. Eventually you decide to build a mine or walk away.</p>
+
+<p>That made me <mark>see exploration as a sequence of decisions, not just a prediction problem</mark>.</p>
+
+<h2>Prediction</h2>
+<p>Most of the AI work in exploration I came across is about prediction. <a href="https://www.deeplearning.ai/the-batch/how-kobold-metals-uses-ai-to-find-rare-earth-minerals">KoBold Metals</a> and <a href="https://www.globalminingreview.com/finance-business/31012025/">Earth AI</a> train models on geological maps, satellite images and soil chemistry to estimate where deposits are likely. That's useful, because it tells you where to look. (KoBold also uses probabilistic methods to choose drill holes, so this is a difference of emphasis.)</p>
+
+<p>But prediction seems to hit a ceiling fairly quickly. In published studies, simple models like logistic regression often predict deposits about as well as complex machine learning (<a href="https://isprs-archives.copernicus.org/articles/XLIX-B3-2026/25/2026/">for example</a>). That makes sense, since any one region has only a handful of known deposits to learn from.</p>
+
+<p>There's also a mathematical reason. Geologists often model the ground as two parts. One is the big structure, like the shape and location of an ore body. The other is small-scale variation around it, which behaves like random noise.</p>
+
+<p>For the noise part, two facts are well known. The best guess at any spot is a weighted average of the nearby holes, a method called kriging, and no fancier model beats it [3]. And <mark>how unsure you are at a spot depends only on where your holes are, not on what they found</mark> [3, 4].</p>
+
+<p>The second fact has a useful consequence. For the noise part, nothing you learn changes where you should drill next, so you could plan those holes in advance. Adapting only helps with the big structure, meaning where the ore body is, how large it is, and whether it's worth mining. <mark>That's the part where each result should change where the next hole goes.</mark></p>
+
+<h2>Mern &amp; Caers</h2>
+<p>This led me to a paper by John Mern and Jef Caers [1]. They treated exploration as an RL problem where the planner can't see underground, only the holes it has drilled. Their planner, POMCPOW [2], is a form of <a href="https://en.wikipedia.org/wiki/Monte_Carlo_tree_search">Monte Carlo tree search</a>, the method behind AlphaGo. It picks each hole after seeing the result of the previous one.</p>
+
+<p>On their test problem it matched the accuracy of a 16-hole grid with far fewer holes. It also learned, without being told, to step outward and find the edge of the deposit, which is what a geologist would do.</p>
+
+<h2>Slow labs</h2>
+<p>But the planner assumes each result comes back before it picks the next hole. Real drilling doesn't work that way. Rock samples are shipped to a lab, and results come back weeks later. Explorers have reported lab queues of <a href="https://www.cruxinvestor.com/posts/fitzroy-minerals-operational-mitigation-protects-buen-retiros-july-data-cut-off-october-permit-timeline">60 to 70 days</a>, and after COVID some waits <a href="https://www.miningnewsnorth.com/story/2022/11/04/in-depth/lightspeed-answer-to-backlogged-assays/7622.html">stretched to months</a>.</p>
+
+<p>Companies are paying to shorten this. A newer method, PhotonAssay, measures gold in about two minutes per sample instead of hours (<a href="https://www.csiro.au/en/work-with-us/industries/mining-resources/sensing/photonassay-xray-gold-detection">CSIRO</a>). Barrick has built <a href="https://www.miningweekly.com/article/barrick-commissions-africas-first-photonassay-laboratory-2021-10-11">these labs at its mines</a>. Some smaller explorers have bought their own sample labs just to skip the queue (<a href="https://resourcesroadhouse.com.au/?p=2057">Middle Island</a>, <a href="https://smallcaps.com.au/article/nova-minerals-commissions-onsite-preparation-lab-estelle-assay-turnaround-times">Nova Minerals</a>).</p>
+
+<p>Drilling less and finishing sooner are the two numbers people care about. <a href="https://www.terraai.com/">Terra AI's</a> copper back-test, for example, reports 58% less drilling and a 44% shorter timeline. This experiment looks at how the two trade off.</p>
+
+<p><mark>The question: how much does a planner lose if it only gets results back every few holes?</mark></p>
+
+<p>Theory suggests not much. In other fields, drilling (or testing) in batches loses little if you fill in the missing results with your best guesses [5, 6]. And a few rounds of adapting often capture most of the benefit of adapting after every step [7, 8]. But those results are for problems like finding the highest point on a map. Exploration ends in one yes-or-no decision about whether a deposit pays for itself. I couldn't find anyone who had tested batching there.</p>
+
+<p>The answer also says something about fast labs. If batching is cheap, then <mark>faster results mainly save time, not improve decisions</mark>.</p>
+
+<h2>Experiment</h2>
+<p>I used the authors' code and test case [1] and changed one thing. In their setup:</p>
+
+<ol class="steps">
+<li><strong>World.</strong> A 50 by 50 map with one ore body of random location and size, plus noise. The planner knows this recipe but not the map.</li>
+<li><strong>Belief.</strong> 1,000 candidate maps that fit the holes drilled so far.</li>
+<li><strong>Planning.</strong> Before each move, the tree search plays out 10,000 imagined campaigns in randomly drawn maps and picks the move that does best on average. A move is a new hole or stopping.</li>
+<li><strong>Stopping.</strong> When another hole isn't worth its cost, or at 25 holes.</li>
+<li><strong>Payoff.</strong> Each hole costs 0.1. Mining pays the ore minus 150, and walking away pays 0. <mark>So the right call is to mine exactly when the deposit holds more than 150 units of ore.</mark></li>
+</ol>
+
+<p>My change is the batch size <i>B</i>, the number of holes chosen before any results come back. Pending holes are filled in with their predicted grade, a trick called the kriging believer [5]. A batch closes early if the planner wants to stop, and it decides to mine only once every result is back. <i>B</i> = 1 is the original setup.</p>
+
+<p>I ran <i>B</i> = 1, 2, 4 and 8, plus the paper's 9- and 16-hole grids, on the same 100 deposits (22 profitable) with the same random seeds.</p>
+
+<h2>Results</h2>
+<h3>4× fewer lab rounds, 2 more holes</h3>
+<p><mark>With batches of eight, the planner needed about two lab rounds instead of eight, and drilled about two more holes.</mark> The extra holes come at the end. Holes in a batch are committed before their results arrive, so the planner sometimes drills a few that, in hindsight, it didn't need.</p>
+<figure>
+<img src="fig_time_money.svg" alt="Lab round-trips against holes drilled, per policy">
+<figcaption>Lab round-trips against holes drilled. Bars are 95% intervals.</figcaption>
+</figure>
+
+<h3>Each hole tells you about as much</h3>
+<p>I expected each hole to be less useful when drilled blind, but the difference was small. <mark>Hole for hole, every batch size reduced uncertainty about the deposit at about the same rate</mark>, and all of them beat the grids. Counted by lab rounds instead, bigger batches were far ahead. After one round, batches of eight had cut the uncertainty by more than half. Drilling one at a time had barely started.</p>
+<figure>
+<img src="fig_uncertainty.svg" alt="Volume uncertainty against holes drilled and against lab round-trips, for each batch size">
+<figcaption>Uncertainty in ore volume, relative to the start. Left by holes, right by lab rounds.</figcaption>
+</figure>
+
+<h3>Same decisions</h3>
+<p><mark>Batch size didn't noticeably change how often the planner made the right call, or how much profit it made.</mark> Batches of eight mined 21 of the 22 profitable deposits. The 9-hole grid drilled about as many holes and mined only 15. Every wrong call, at every batch size, was on a deposit close to break-even.</p>
+<figure>
+<img src="fig_decisions.svg" alt="Decision accuracy and discounted return per policy">
+<figcaption>How often the planner made the right call, and its profit per deposit. Bars are 95% intervals.</figcaption>
+</figure>
+
+<h2>Takeaways</h2>
+<p>In this setting, a planner doesn't need to wait for every result.</p>
+
+<p><mark>Most of the value of adapting comes in the first round or two</mark>, while the planner is finding the ore body. After that, batches fill in the details well. Faster labs would mostly save time here rather than improve decisions. But when a discovery already takes 16 years to become a mine, time is worth a lot.</p>
+
+<p>More broadly, the planner worked because <mark>it knew what it didn't know</mark>. It had a model grounded in geology, it tracked its own uncertainty, and it used that uncertainty to decide where to drill, when to stop, and how long it could wait for results. That's the kind of system I'd like to work on.</p>
+
+<p>The next step I want to try is a planner that knows it's drilling in batches and picks each batch as a whole. That might recover some of the extra holes.</p>
+
+<h2>Limits</h2>
+<ul>
+<li>The geology is 2D and synthetic, assays have no error, and the planner's prior is the true model.</li>
+<li>The paper uses a max backup in the search tree, but the public code and I use the mean, which likely explains why my <i>B</i> = 1 baseline recovers 80% of profitable ore against the paper's 92.6%.</li>
+<li>With 100 deposits, accuracy intervals are about ±6 points.</li>
+<li>To fit on a laptop I drew the belief update's Gaussian samples in one batch, which gives the same distribution 2.5 times faster.</li>
+</ul>
+
+<h2>Appendix</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Policy</th><th>Holes</th><th>Lab rounds</th><th>Correct</th><th>Return</th><th>Profitable mined</th></tr></thead>
+<tbody>
+<tr class="ref"><td><i>B</i> = 1</td><td>7.9</td><td>7.9</td><td>87%</td><td>4.22</td><td>17 / 22</td></tr>
+<tr><td><i>B</i> = 2</td><td>8.8 <small>(+0.9 [−0.7, 2.6])</small></td><td>4.7</td><td>87% <small>(0 [−6, 6])</small></td><td>4.13 <small>(−0.10 [−0.51, 0.31])</small></td><td>16 / 22</td></tr>
+<tr><td><i>B</i> = 4</td><td>9.8 <small>(+2.0 [0.0, 3.8])</small></td><td>2.8</td><td>93% <small>(+6 [−2, 14])</small></td><td>4.65 <small>(+0.43 [−0.34, 1.26])</small></td><td>20 / 22</td></tr>
+<tr><td><i>B</i> = 8</td><td>9.5 <small>(+1.7 [0.1, 3.2])</small></td><td>1.9</td><td>90% <small>(+3 [−4, 10])</small></td><td>4.14 <small>(−0.08 [−1.26, 0.99])</small></td><td>21 / 22</td></tr>
+<tr><td>grid 9</td><td>9</td><td>1</td><td>85% <small>(−2 [−11, 7])</small></td><td>3.41 <small>(−0.81 [−2.13, 0.45])</small></td><td>15 / 22</td></tr>
+<tr><td>grid 16</td><td>16</td><td>1</td><td>92% <small>(+5 [−2, 12])</small></td><td>3.13 <small>(−1.09 [−2.20, −0.01])</small></td><td>17 / 22</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">Means over 100 deposits. In parentheses is the paired difference from <i>B</i> = 1 with a 95% bootstrap interval. Accuracy differences are in percentage points. Mean batch sizes were 1.9, 3.6 and 5.1 for <i>B</i> = 2, 4 and 8, because the planner often stops filling a batch early.</p>
+
+<h2>References</h2>
+<ol class="refs">
+<li>Mern, J. and Caers, J. <i>The Intelligent Prospector v1.0: geoscientific model development and prediction by sequential data acquisition planning with application to mineral exploration.</i> Geoscientific Model Development 16, 289–313 (2023).</li>
+<li>Sunberg, Z. and Kochenderfer, M. <i>Online algorithms for POMDPs with continuous state, action, and observation spaces.</i> ICAPS (2018).</li>
+<li>Rasmussen, C. E. and Williams, C. K. I. <i>Gaussian Processes for Machine Learning.</i> MIT Press (2006), ch. 2.</li>
+<li>Krause, A., Singh, A. and Guestrin, C. <i>Near-optimal sensor placements in Gaussian processes.</i> JMLR 9 (2008).</li>
+<li>Ginsbourger, D., Le Riche, R. and Carraro, L. <i>Kriging is well-suited to parallelize optimization.</i> In Computational Intelligence in Expensive Optimization Problems, Springer (2010).</li>
+<li>Desautels, T., Krause, A. and Burdick, J. <i>Parallelizing exploration–exploitation tradeoffs in Gaussian process bandit optimization.</i> JMLR 15 (2014).</li>
+<li>Golovin, D. and Krause, A. <i>Adaptive submodularity: theory and applications in active learning and stochastic optimization.</i> JAIR 42 (2011).</li>
+<li>Esfandiari, H., Karbasi, A. and Mirrokni, V. <i>Adaptivity in adaptive submodularity.</i> COLT (2021).</li>
+</ol>
+
+</main>
+</body>
+</html>
